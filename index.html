@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="css/styles.css">
+  <link type="text/css" href="css/libs/jquery-ui.min.css" rel="stylesheet" />
+</head>
+<body>
+
+  <h1 id="title">imPG</h1>
+  <h2 id="sub-title">Kids in mind</h2>
+  <img id="film-cover" style="display: none">
+
+  <button id="search-btn" style="display: none" onclick="myFunction()">New Search</button>
+
+  <div id="form">
+  <form id="pgform" class="form-style-7" action="https://impg-app.herokuapp.com" method="get">
+    <ul>
+      <li>
+          <label for="name">Movie Name</label>
+          <input type="text" name="name" maxlength="100" placeholder="Avengers" id="imdbName" name="imdbName">
+          <input name="imdbRef" id="imdbRef" type="hidden" />
+      </li>
+
+      <li>
+          <input type="submit" value="Search" >
+      </li>
+    </ul>
+  </form>
+  </div>
+
+  <!-- STRUCTURE
+  <div class="container">
+    <div class="content">
+      <div class="blog-title">
+        <h2><a id="title">Profanity</a><a id="overall-vote">7 of 19 found this moderate</a></h2>
+        <div id="status" class="status yellow">moderate</div>
+      </div>
+    
+      <div class="comments" id="comments">
+        <p>During a comical scene, one character gives someone the middle-finger.</p>
+        <div class="seperator"></div>
+        <p>Sh*t is heard 8 times, ass is heard once, hell is heard 3 times, d*ck and sh*t are heard in a song that plays.</p>
+      </div>
+    </div>
+  
+    <div class="seperator votes-container">
+      <div class="votes" id="votes">
+        <ul>
+          <li><a class="red">SEVERE - 4</a></li>
+          <li><a class="orange">MODERATE - 7</a></li>
+          <li><a class="yellow">MILD - 8</a></li>
+          <li><a class="green">NONE - 0</a></li>
+        </ul>
+      </div>
+    </div>
+  </div> -->
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script type="text/javascript" src="js/request.js"></script>
+  <script type="text/javascript" src="js/builder.js"></script>
+  <script type="text/javascript" src="js/libs/jquery-ui.min.js"></script>
+
+  <script type="text/javascript">
+
+
+    /* attach a submit handler to the form */
+$("#pgform").submit(function(event) {
+
+    myFunction();
+
+    /* stop form from submitting normally */
+    event.preventDefault();
+
+    /* get the action attribute from the <form action=""> element */
+    // var $form = $( this );
+    var url = $(this).attr( 'action' );
+
+    /* Send the data using GET with element id imdbRef*/
+    var posting = $.get(url, 
+      { 
+        imdbRef: $('#imdbRef').val()  //todo= FIX THIS - no longer ref, but result from search
+      }
+      );
+
+      posting.done(function(data) {
+        // console.log(data);
+
+        data.map(function(result){
+          var html = buildHTML(result);
+          document.body.appendChild(html);
+         });
+    });
+
+});
+
+$(function(){
+    $("#imdbName").autocomplete({
+        source: function (request, response) {
+            if(request.term.length < 2)
+            {
+                return ;
+            }
+
+            var reqNoSpaces = request.term.replace(/\s/g, '_').toLowerCase();
+            var req = reqNoSpaces[0] + '/' + reqNoSpaces + '.json';
+                $.ajax({
+                    url: "http://sg.media-imdb.com/suggests/" + req,//url
+                    dataType: "jsonp",
+                    cache: true,
+                    jsonp: false,
+                    jsonpCallback: "imdb$" + reqNoSpaces,
+                    success: function (data) {
+                        response($.map(data.d, function (item) {
+                            
+                            var imgSource = 
+                            (typeof item.i !== 'undefined') ? item.i[0] : '#';
+
+                            var filmNameAndYear = 
+                            (typeof item.y !== 'undefined') ? item.l + ' (' + item.y + ')' : item.l;
+
+                          return {
+                            label: filmNameAndYear,
+                            icon: imgSource, 
+                            id: item.id.substring(2)
+                          }
+                       }))
+                    }
+                });
+        },
+        select: function (even, ui) {
+             $("#imdbRef").val(ui.item.id);
+             $("#imdbName").val(ui.item.label);
+             $("#sub-title").html(ui.item.label);
+             $("#film-cover").attr("src", ui.item.icon);
+             $("#film-cover").attr("height", 250);
+        }
+    });
+});
+  </script>
+</body>
+</html>
